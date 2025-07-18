@@ -1,0 +1,78 @@
+---
+- name: Resume Builder - AWS Infrastructure Teardown
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - group_vars/all.yml
+
+  tasks:
+    - name: Find EC2 instances to terminate
+      amazon.aws.ec2_instance_info:
+        region: "{{ aws_region }}"
+        filters:
+          "tag:Project": "{{ tags.Project }}"
+          "tag:Environment": "{{ tags.Environment }}"
+      register: ec2_instances
+
+    - name: Terminate EC2 instances
+      amazon.aws.ec2_instance:
+        instance_ids: "{{ item.instance_id }}"
+        state: absent
+        region: "{{ aws_region }}"
+        wait: true
+        wait_timeout: 300
+      loop: "{{ ec2_instances.instances }}"
+      when: ec2_instances.instances | length > 0
+
+    - name: Delete security group
+      amazon.aws.ec2_group:
+        name: "{{ security_group_name }}"
+        region: "{{ aws_region }}"
+        state: absent
+
+    - name: List S3 bucket objects
+      amazon.aws.s3_object_info:
+        bucket: "{{ bucket_name }}"
+        region: "{{ aws_region }}"
+      register: s3_objects
+
+    - name: Delete S3 bucket objects
+      amazon.aws.s3_object:
+        bucket: "{{ bucket_name }}"
+        object: "{{ item.key }}"
+        state: absent
+        region: "{{ aws_region }}"
+      loop: "{{ s3_objects.s3_objects }}"
+      when: s3_objects.s3_objects | length > 0
+
+    - name: Delete S3 bucket
+      amazon.aws.s3_bucket:
+        name: "{{ bucket_name }}"
+        region: "{{ aws_region }}"
+        state: absent
+
+    - name: Delete IAM instance profile
+      amazon.aws.iam_instance_profile:
+        name: "{{ iam_role_name }}-profile"
+        state: absent
+
+    - name: Delete IAM role policies
+      amazon.aws.iam_role_policy:
+        role: "{{ iam_role_name }}"
+        policy_name: "{{ iam_role_name }}-s3-policy"
+        state: absent
+
+    - name: Delete IAM role
+      amazon.aws.iam_role:
+        name: "{{ iam_role_name }}"
+        state: absent
+
+    - name: Display cleanup summary
+      debug:
+        msg: |
+          Cleanup completed successfully!
+          Terminated EC2 instances: {{ ec2_instances.instances | length }}
+          Deleted S3 objects: {{ s3_objects.s3_objects | length if s3_objects.s3_objects else 0 }}
+          Deleted S3 bucket: {{ bucket_name }}
+          Deleted IAM role: {{ iam_role_name }}
+          Deleted security group: {{ security_group_name }} 
