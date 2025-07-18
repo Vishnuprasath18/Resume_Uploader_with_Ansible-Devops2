@@ -1,43 +1,4 @@
-graph TB
-    subgraph "Local Development"
-        A[Flask App Code] --> B[Ansible Playbooks]
-        B --> C[Deploy Script]
-    end
-    
-    subgraph "AWS Infrastructure"
-        D[S3 Bucket<br/>resume-uploader-bucker] --> E[File Storage]
-        F[IAM Role<br/>ResumeUploaderRole] --> G[Security Permissions]
-        H[Security Group<br/>resume-builder-sg] --> I[Network Rules]
-        J[EC2 Instance<br/>t2.micro] --> K[Flask Application]
-    end
-    
-    subgraph "User Interaction"
-        L[User Browser] --> M[Upload Resume]
-        M --> N[Download Resume]
-        M --> O[Delete Resume]
-    end
-    
-    C --> D
-    C --> F
-    C --> H
-    C --> J
-    
-    K --> E
-    K --> G
-    K --> I
-    
-    L --> K
-    N --> E
-    O --> E
-    
-    style A fill:#e1f5fe
-    style B fill:#f3e5f5
-    style C fill:#fff3e0
-    style D fill:#e8f5e8
-    style F fill:#e8f5e8
-    style H fill:#e8f5e8
-    style J fill:#e8f5e8
-    style K fill:#fff3e0
+
 # Resume Builder - AWS DevOps Automation Project
 
 ## 🚀 Project Overview
